@@ -24,15 +24,44 @@ model User {
 }
 
 model Monitor {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
   url       String
-  interval  Int      @default(60)
-  isPublic  Boolean  @default(false)
-  slug      String   @unique
-  createdAt DateTime @default(now())
+  interval  Int        @default(60)
+  isPublic  Boolean    @default(false)
+  slug      String     @unique
+  createdAt DateTime   @default(now())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
+  checks    Check[]
+  incidents Incident[]
 
   @@map("monitors")
+}
+
+enum CheckStatus {
+  UP
+  DOWN
+}
+
+model Check {
+  id           String      @id @default(uuid())
+  monitorId    String
+  monitor      Monitor     @relation(fields: [monitorId], references: [id])
+  status       CheckStatus
+  responseTime Int?
+  checkedAt    DateTime    @default(now())
+
+  @@map("checks")
+  @@index([monitorId, checkedAt])
+}
+
+model Incident {
+  id         String    @id @default(uuid())
+  monitorId  String
+  monitor    Monitor   @relation(fields: [monitorId], references: [id])
+  startedAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@map("incidents")
 }

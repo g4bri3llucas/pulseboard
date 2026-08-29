@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AuthError } from '../modules/auth/auth.service';
 import { MonitorNotFoundError, MonitorForbiddenError } from '../modules/monitors/monitor.service';
+import { MonitorNotPublicError } from '../modules/status/status.service';
 
 export function errorHandler(
   error: unknown,
@@ -23,6 +24,10 @@ export function errorHandler(
 
   if (error instanceof MonitorForbiddenError) {
     return res.status(403).json({ error: error.message });
+  }
+
+  if (error instanceof MonitorNotPublicError) {
+    return res.status(404).json({ error: error.message });
   }
 
   console.error(error);

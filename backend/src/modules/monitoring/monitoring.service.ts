@@ -1,6 +1,7 @@
 import { prisma } from '../../config/prisma';
 import { checkRepository } from '../checks/check.repository';
 import { incidentRepository } from '../incidents/incident.repository';
+import { emailService } from '../notifications/email.service';
 
 const TIMEOUT_MS = 10_000;
 
@@ -20,7 +21,7 @@ async function pingUrl(url: string): Promise<{ ok: boolean; responseTime: number
   }
 }
 
-async function checkMonitor(monitor: { id: string; url: string }) {
+async function checkMonitor(monitor: { id: string; url: string; name: string; userId: string }) {
   const { ok, responseTime } = await pingUrl(monitor.url);
 
   await checkRepository.create({
@@ -34,11 +35,21 @@ async function checkMonitor(monitor: { id: string; url: string }) {
   if (!ok && !openIncident) {
     await incidentRepository.open(monitor.id);
     console.log(`[incident opened] monitor ${monitor.id}`);
+
+    const user = await prisma.user.findUnique({ where: { id: monitor.userId } });
+    if (user) {
+      await emailService.sendIncidentAlert(user.email, monitor.name, 'opened');
+    }
   }
 
   if (ok && openIncident) {
     await incidentRepository.resolve(openIncident.id);
     console.log(`[incident resolved] monitor ${monitor.id}`);
+
+    const user = await prisma.user.findUnique({ where: { id: monitor.userId } });
+    if (user) {
+      await emailService.sendIncidentAlert(user.email, monitor.name, 'resolved');
+    }
   }
 }
 

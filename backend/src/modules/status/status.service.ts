@@ -2,6 +2,8 @@ import { prisma } from '../../config/prisma';
 
 export class MonitorNotPublicError extends Error {}
 
+const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutos
+
 export const statusService = {
   async getBySlug(slug: string) {
     const monitor = await prisma.monitor.findUnique({ where: { slug } });
@@ -32,9 +34,12 @@ export const statusService = {
     const uptimePercentage =
       recentChecks.length > 0 ? (upCount / recentChecks.length) * 100 : 100;
 
+    const isStale =
+      !lastCheck || Date.now() - lastCheck.checkedAt.getTime() > STALE_THRESHOLD_MS;
+
     return {
       name: monitor.name,
-      status: lastCheck?.status ?? 'UNKNOWN',
+      status: isStale ? 'UNKNOWN' : lastCheck!.status,
       uptimePercentage: Number(uptimePercentage.toFixed(2)),
       incidents,
     };

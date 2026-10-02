@@ -11,6 +11,56 @@ services:
       - "5432:5432"
     volumes:
       - pulseboard_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulseboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pulseboard-api
+    restart: always
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://pulseboard:pulseboard@postgres:5432/pulseboard?schema=public
+      JWT_SECRET: change-this-in-production
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pulseboard-worker
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://pulseboard:pulseboard@postgres:5432/pulseboard?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: node dist/worker.js
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000
+    container_name: pulseboard-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
 
 volumes:
   pulseboard_data:

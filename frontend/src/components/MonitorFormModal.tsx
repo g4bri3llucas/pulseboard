@@ -42,25 +42,32 @@ export function MonitorFormModal({ monitor, onSubmit, onClose, isSubmitting }: P
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            Name
+          </label>
           <input
+            id="name"
             {...register('name')}
             className="w-full border border-gray-300 rounded px-3 py-2 mb-1"
           />
           {errors.name && <p className="text-red-600 text-xs mb-2">{errors.name.message}</p>}
 
-          <label className="block text-sm font-medium text-gray-700 mb-1 mt-3">URL</label>
+          <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1 mt-3">
+            URL
+          </label>
           <input
+            id="url"
             {...register('url')}
             placeholder="https://example.com/health"
             className="w-full border border-gray-300 rounded px-3 py-2 mb-1"
           />
           {errors.url && <p className="text-red-600 text-xs mb-2">{errors.url.message}</p>}
 
-          <label className="block text-sm font-medium text-gray-700 mb-1 mt-3">
+          <label htmlFor="interval" className="block text-sm font-medium text-gray-700 mb-1 mt-3">
             Check interval (seconds)
           </label>
           <input
+            id="interval"
             type="number"
             {...register('interval', { valueAsNumber: true })}
             className="w-full border border-gray-300 rounded px-3 py-2 mb-1"
@@ -69,8 +76,8 @@ export function MonitorFormModal({ monitor, onSubmit, onClose, isSubmitting }: P
             <p className="text-red-600 text-xs mb-2">{errors.interval.message}</p>
           )}
 
-          <label className="flex items-center gap-2 mt-3 mb-4">
-            <input type="checkbox" {...register('isPublic')} />
+          <label htmlFor="isPublic" className="flex items-center gap-2 mt-3 mb-4">
+            <input id="isPublic" type="checkbox" {...register('isPublic')} />
             <span className="text-sm text-gray-700">Show on public status page</span>
           </label>
 

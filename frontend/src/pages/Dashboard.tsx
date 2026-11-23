@@ -85,6 +85,11 @@ export function Dashboard() {
 
       {isLoading && <p className="text-gray-500">Loading monitors...</p>}
       {isError && <p className="text-red-600">Failed to load monitors.</p>}
+      {deleteMutation.isError && (
+        <p role="alert" className="text-red-600 mb-3">
+          Could not delete the monitor. Try again.
+        </p>
+      )}
 
       {monitors && monitors.length === 0 && (
         <p className="text-gray-500">No monitors yet. Create your first one!</p>

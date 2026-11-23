@@ -9,9 +9,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
-    "test": "vitest run",
-    "test:unit": "vitest run src/modules/auth/auth.service.test.ts",
-    "test:integration": "dotenv -e .env.test -- vitest run src/modules/auth/auth.routes.test.ts"
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run --exclude \"**/*.routes.test.ts\"",
+    "test:integration": "dotenv -e .env.test -- vitest run --no-file-parallelism routes.test"
   },
   "keywords": [],
   "author": "",

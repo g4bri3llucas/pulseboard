@@ -47,7 +47,7 @@ enum CheckStatus {
 model Check {
   id           String      @id @default(uuid())
   monitorId    String
-  monitor      Monitor     @relation(fields: [monitorId], references: [id])
+  monitor      Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
   status       CheckStatus
   responseTime Int?
   checkedAt    DateTime    @default(now())
@@ -59,7 +59,7 @@ model Check {
 model Incident {
   id         String    @id @default(uuid())
   monitorId  String
-  monitor    Monitor   @relation(fields: [monitorId], references: [id])
+  monitor    Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
   startedAt  DateTime  @default(now())
   resolvedAt DateTime?
 

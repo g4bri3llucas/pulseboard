@@ -12,6 +12,18 @@ export const monitorRepository = {
     return prisma.monitor.create({ data });
   },
 
+  findAllWithOwnerEmail() {
+    return prisma.monitor.findMany({
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        interval: true,
+        user: { select: { email: true } },
+      },
+    });
+  },
+
   findAllByUser(userId: string) {
     return prisma.monitor.findMany({
       where: { userId },

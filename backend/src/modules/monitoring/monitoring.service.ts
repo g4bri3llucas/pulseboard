@@ -1,27 +1,40 @@
-import { prisma } from '../../config/prisma';
+import { monitorRepository } from '../monitors/monitor.repository';
 import { checkRepository } from '../checks/check.repository';
 import { incidentRepository } from '../incidents/incident.repository';
 import { emailService } from '../notifications/email.service';
 
 const TIMEOUT_MS = 10_000;
 
+interface DueMonitor {
+  id: string;
+  name: string;
+  url: string;
+  user: { email: string };
+}
+
 async function pingUrl(url: string): Promise<{ ok: boolean; responseTime: number }> {
   const start = Date.now();
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const response = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const responseTime = Date.now() - start;
+    await response.body?.cancel();
 
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    return { ok: response.status < 400, responseTime: Date.now() - start };
+    return { ok: response.status < 400, responseTime };
   } catch {
     return { ok: false, responseTime: Date.now() - start };
   }
 }
 
-async function checkMonitor(monitor: { id: string; url: string; name: string; userId: string }) {
+async function notify(monitor: DueMonitor, kind: 'opened' | 'resolved') {
+  try {
+    await emailService.sendIncidentAlert(monitor.user.email, monitor.name, kind);
+  } catch (error) {
+    console.error(`[email failed] monitor ${monitor.id}:`, error);
+  }
+}
+
+async function checkMonitor(monitor: DueMonitor) {
   const { ok, responseTime } = await pingUrl(monitor.url);
 
   await checkRepository.create({
@@ -35,45 +48,38 @@ async function checkMonitor(monitor: { id: string; url: string; name: string; us
   if (!ok && !openIncident) {
     await incidentRepository.open(monitor.id);
     console.log(`[incident opened] monitor ${monitor.id}`);
-
-    const user = await prisma.user.findUnique({ where: { id: monitor.userId } });
-    if (user) {
-      await emailService.sendIncidentAlert(user.email, monitor.name, 'opened');
-    }
+    await notify(monitor, 'opened');
   }
 
   if (ok && openIncident) {
     await incidentRepository.resolve(openIncident.id);
     console.log(`[incident resolved] monitor ${monitor.id}`);
-
-    const user = await prisma.user.findUnique({ where: { id: monitor.userId } });
-    if (user) {
-      await emailService.sendIncidentAlert(user.email, monitor.name, 'resolved');
-    }
+    await notify(monitor, 'resolved');
   }
 }
 
 export const monitoringService = {
-  async runDueChecks() {
-    const monitors = await prisma.monitor.findMany();
+  async runDueChecks(now: number = Date.now()) {
+    const monitors = await monitorRepository.findAllWithOwnerEmail();
+    const latestChecks = await checkRepository.findLatestByMonitors(
+      monitors.map((monitor) => monitor.id),
+    );
+    const lastCheckedAt = new Map(
+      latestChecks.map((check) => [check.monitorId, check.checkedAt.getTime()]),
+    );
 
-    const dueMonitors = [];
-    for (const monitor of monitors) {
-      const lastCheck = await prisma.check.findFirst({
-        where: { monitorId: monitor.id },
-        orderBy: { checkedAt: 'desc' },
-      });
+    const dueMonitors = monitors.filter((monitor) => {
+      const checkedAt = lastCheckedAt.get(monitor.id);
+      return checkedAt === undefined || now - checkedAt >= monitor.interval * 1000;
+    });
 
-      const secondsSinceLastCheck = lastCheck
-        ? (Date.now() - lastCheck.checkedAt.getTime()) / 1000
-        : Infinity;
+    const results = await Promise.allSettled(dueMonitors.map(checkMonitor));
 
-      if (secondsSinceLastCheck >= monitor.interval) {
-        dueMonitors.push(monitor);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`[check failed] monitor ${dueMonitors[index].id}:`, result.reason);
       }
-    }
-
-    await Promise.all(dueMonitors.map(checkMonitor));
+    });
 
     return dueMonitors.length;
   },

@@ -15,6 +15,7 @@ export function Dashboard() {
   const { data: monitors, isLoading, isError } = useQuery({
     queryKey: ['monitors'],
     queryFn: monitorService.list,
+    refetchInterval: 15_000,
   });
 
   const createMutation = useMutation({

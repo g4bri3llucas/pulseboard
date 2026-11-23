@@ -47,6 +47,9 @@ describe('Dashboard', () => {
         isPublic: false,
         slug: 'minha-api-abc123',
         createdAt: '2026-11-23T00:00:00.000Z',
+        status: 'UNKNOWN',
+        lastCheck: null,
+        uptime24h: null,
       },
     ]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);

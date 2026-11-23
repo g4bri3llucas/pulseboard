@@ -23,6 +23,7 @@ describe('Login page', () => {
       user: null,
       login: vi.fn(),
       logout: vi.fn(),
+      sessionExpired: false,
     });
 
     render(
@@ -41,6 +42,7 @@ describe('Login page', () => {
       user: null,
       login: loginMock,
       logout: vi.fn(),
+      sessionExpired: false,
     });
 
     const user = userEvent.setup();
@@ -66,6 +68,7 @@ describe('Login page', () => {
       user: null,
       login: loginMock,
       logout: vi.fn(),
+      sessionExpired: false,
     });
 
     const user = userEvent.setup();
@@ -81,5 +84,22 @@ describe('Login page', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByText('Invalid email or password')).toBeInTheDocument();
+  });
+
+  it('tells the user when the session has expired', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      sessionExpired: true,
+    });
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Your session has expired');
   });
 });

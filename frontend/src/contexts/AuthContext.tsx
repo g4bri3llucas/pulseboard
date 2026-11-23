@@ -1,6 +1,7 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { authService } from '../services/auth.service';
+import { setUnauthorizedHandler } from '../services/api';
 
 interface User {
   id: string;
@@ -10,6 +11,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  sessionExpired: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -21,22 +23,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('user');
     return stored ? JSON.parse(stored) : null;
   });
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   async function login(email: string, password: string) {
     const { token, user } = await authService.login(email, password);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
+    setSessionExpired(false);
     setUser(user);
   }
 
-  function logout() {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-  }
+  }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      logout();
+      setSessionExpired(true);
+    });
+
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, sessionExpired, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

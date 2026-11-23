@@ -37,6 +37,7 @@ describe('Dashboard', () => {
       user: { id: '1', name: 'Lucas', email: 'lucas@test.com' },
       login: vi.fn(),
       logout: vi.fn(),
+      sessionExpired: false,
     });
     vi.mocked(monitorService.list).mockResolvedValue([
       {

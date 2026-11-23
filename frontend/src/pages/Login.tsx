@@ -8,7 +8,7 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e: FormEvent) {
@@ -33,6 +33,12 @@ export function Login() {
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm"
       >
         <h1 className="text-2xl font-bold text-gray-800 mb-6">PulseBoard</h1>
+
+        {sessionExpired && !error && (
+          <p role="status" className="text-amber-700 text-sm mb-4">
+            Your session has expired. Please sign in again.
+          </p>
+        )}
 
         {error && (
           <p className="text-red-600 text-sm mb-4">{error}</p>

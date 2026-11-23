@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { monitorService } from '../services/monitor.service';
 import { MonitorCard } from '../components/MonitorCard';
 import { MonitorFormModal } from '../components/MonitorFormModal';

@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
-import { AuthProvider, useAuth } from './AuthContext';
+import { AuthProvider } from './AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { api } from '../services/api';
 
 function SessionInfo() {
